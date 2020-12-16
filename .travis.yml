@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t giuntalio/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true giuntalio/react-test npm test
+
+after_success:
+  - docker build -t giuntalio/multi-client ./client
+  - docker build -t giuntalio/multi-nginx ./nginx
+  - docker build -t giuntalio/multi-server ./server
+  - docker build -t giuntalio/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push giuntalio/multi-client
+  - docker push giuntalio/multi-nginx
+  - docker push giuntalio/multi-server
+  - docker push giuntalio/multi-worker
